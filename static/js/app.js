@@ -22,10 +22,11 @@ const elements = {
   routeName: document.getElementById('route-name'),
   commuteMinutes: document.getElementById('commute-minutes'),
   sessionLength: document.getElementById('session-length'),
-  sessionButtons: Array.from(document.querySelectorAll('.session-btn')),
+  brandHomeLink: document.getElementById('brand-home-link'),
   startSessionBtn: document.getElementById('start-session-btn'),
   setUpError: document.getElementById('setup-error'),
   studyProgress: document.getElementById('study-progress'),
+  studyProgressBar: document.getElementById('study-progress-bar'),
   studyStatus: document.getElementById('study-status'),
   questionText: document.getElementById('question-text'),
   answerBlock: document.getElementById('answer-block'),
@@ -38,8 +39,10 @@ const elements = {
   endSessionBtn: document.getElementById('end-session-btn'),
   confirmError: document.getElementById('confirm-error'),
   actualMinutes: document.getElementById('actual-minutes'),
+  plannedSessionSummary: document.getElementById('planned-session-summary'),
   saveSessionBtn: document.getElementById('save-session-btn'),
   toast: document.getElementById('toast'),
+  weekMinutes: document.getElementById('week-minutes'),
   hoursReclaimed: document.getElementById('hours-reclaimed'),
   chartBars: document.getElementById('chart-bars'),
   recentSessionsList: document.getElementById('recent-sessions-list'),
@@ -89,8 +92,11 @@ async function loadSummary() {
   const response = await fetch('/api/summary');
   if (!response.ok) return;
   const summary = await response.json();
+  const weekMinutes = Number(summary.week_minutes || 0);
   const hours = Number(summary.hours_reclaimed || 0);
-  elements.hoursReclaimed.textContent = `${hours.toFixed(1)} hrs reclaimed`;
+
+  elements.weekMinutes.textContent = `${weekMinutes} min`;
+  elements.hoursReclaimed.textContent = `${hours.toFixed(1)} hrs`;
 
   const maxMinutes = Math.max(...(summary.daily || []).map((day) => Number(day.minutes || 0)), 1);
   elements.chartBars.innerHTML = '';
@@ -161,15 +167,10 @@ function updateSetupValidation() {
   const customMinutes = Number(elements.sessionLength.value || 0);
   if (customMinutes > 0) {
     state.selectedMinutes = customMinutes;
-    elements.sessionButtons.forEach((button) => button.classList.remove('selected'));
     return;
   }
 
-  if (regionSelectedMinutes()) {
-    elements.sessionButtons.forEach((button) => {
-      button.classList.toggle('selected', Number(button.dataset.minutes) === state.selectedMinutes);
-    });
-  }
+  state.selectedMinutes = null;
 }
 
 function regionSelectedMinutes() {
@@ -245,6 +246,9 @@ function renderCard() {
 
   const totalCards = state.sessionCards.length;
   const currentPosition = state.currentIndex + 1;
+  const progressPercent = totalCards > 0 ? ((currentPosition / totalCards) * 100) : 0;
+  elements.studyProgressBar.style.width = `${Math.min(progressPercent, 100)}%`;
+
   if (state.reviewPass) {
     elements.studyProgress.textContent = `Review ${currentPosition} of ${totalCards}`;
     elements.studyStatus.textContent = `Review queue: ${state.reviewQueue.length} • Understood: ${state.understoodCount}`;
@@ -326,7 +330,9 @@ function markCurrentCard(reviewAgain) {
 }
 
 function openConfirmScreen() {
-  elements.actualMinutes.value = String(state.currentSession?.planned_minutes || 0);
+  const plannedMinutes = state.currentSession?.planned_minutes || 0;
+  elements.actualMinutes.value = String(plannedMinutes);
+  elements.plannedSessionSummary.textContent = `${plannedMinutes} min`;
   setError(elements.confirmError, '');
   showView(elements.confirmView);
 }
@@ -377,22 +383,26 @@ async function saveSession() {
   elements.saveSessionBtn.disabled = false;
 }
 
+function goHome() {
+  showView(elements.setupView);
+  setError(elements.setUpError, '');
+  setError(elements.confirmError, '');
+  elements.actualMinutes.value = '';
+  state.currentSession = null;
+  state.sessionStarted = false;
+  state.answerVisible = false;
+}
+
 function bindEvents() {
-  elements.sessionButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      elements.sessionButtons.forEach((btn) => btn.classList.remove('selected'));
-      button.classList.add('selected');
-      elements.sessionLength.value = '';
-      state.selectedMinutes = Number(button.dataset.minutes);
-      setError(elements.setUpError, '');
-    });
+  elements.brandHomeLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    goHome();
   });
 
   elements.routeName.addEventListener('input', updateSetupValidation);
   elements.commuteMinutes.addEventListener('input', updateSetupValidation);
   elements.sessionLength.addEventListener('input', () => {
     const customMinutes = Number(elements.sessionLength.value || 0);
-    elements.sessionButtons.forEach((button) => button.classList.remove('selected'));
     state.selectedMinutes = customMinutes > 0 ? customMinutes : null;
     setError(elements.setUpError, '');
   });

@@ -3,37 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Commute Hours</title>
+    <title>Mileo</title>
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
     <div id="app" class="app-shell">
-      <header class="topbar">
-        <h1>Commute Hours</h1>
+      <header class="topbar" aria-label="Mileo header">
+        <a href="#" class="brand-link" id="brand-home-link" aria-label="Go to home page">
+          <div class="brand-wrap">
+            <div class="brand-icon" aria-hidden="true">
+              <span class="brand-icon-inner">◔</span>
+            </div>
+            <div class="brand-copy">
+              <div class="brand-name">Mileo</div>
+              <div class="brand-tagline">Make your commute count.</div>
+            </div>
+          </div>
+        </a>
       </header>
 
       <main>
         <section id="setup-view" class="view active">
-          <p class="helper-text">For commuting time only. Resting is fine.</p>
-          <label>
+          <div class="section-heading">
+            <p class="eyebrow">Your commute</p>
+            <h2>Set up your study window</h2>
+          </div>
+          <p class="helper-text">Keep your learning block realistic and comfortably within your commute time.</p>
+
+          <label class="field-group">
             <span>Route nickname</span>
             <input id="route-name" type="text" maxlength="50" placeholder="Home to college" />
           </label>
 
-          <label>
+          <label class="field-group">
             <span>One-way commute time (minutes)</span>
             <input id="commute-minutes" type="number" min="0" step="1" placeholder="90" />
           </label>
 
-          <div class="session-options">
-            <button class="session-btn" data-minutes="5">5 min</button>
-            <button class="session-btn" data-minutes="10">10 min</button>
-            <button class="session-btn" data-minutes="15">15 min</button>
-          </div>
-
-          <label>
+          <label class="field-group custom-field">
             <span>Session length (minutes)</span>
-            <input id="session-length" type="number" min="1" step="1" placeholder="Enter custom minutes" />
+            <input id="session-length" type="number" min="1" step="1" placeholder="Custom minutes" />
           </label>
 
           <button id="start-session-btn" class="primary-btn" type="button">Start study</button>
@@ -42,9 +51,16 @@
 
         <section id="study-view" class="view hidden">
           <div class="study-header">
-            <span id="study-progress">1 of 10</span>
+            <div class="study-meta">
+              <span class="mini-badge">Learning</span>
+              <span id="study-progress" class="study-progress">Card 1 of 10</span>
+            </div>
             <span id="study-status" class="study-status">Initial pass</span>
-            <button id="end-session-btn" class="secondary-btn" type="button">End early</button>
+            <button id="end-session-btn" class="secondary-btn compact" type="button">End early</button>
+          </div>
+
+          <div class="progress-track" aria-hidden="true">
+            <span id="study-progress-bar" class="progress-bar"></span>
           </div>
 
           <div class="card-panel">
@@ -56,7 +72,7 @@
           </div>
 
           <div class="study-actions">
-            <button id="show-answer-btn" class="primary-btn" type="button">Show answer</button>
+            <button id="show-answer-btn" class="primary-btn" type="button">Reveal answer</button>
             <div id="response-actions" class="response-actions hidden">
               <button id="understood-btn" class="success-btn" type="button">Understood</button>
               <button id="review-btn" class="secondary-btn" type="button">Review again</button>
@@ -65,29 +81,59 @@
         </section>
 
         <section id="confirm-view" class="view hidden">
-          <h2>How many minutes did you actually study?</h2>
-          <label>
+          <div class="section-heading compact-heading">
+            <p class="eyebrow">Session recap</p>
+            <h2>How many minutes did you actually study?</h2>
+          </div>
+          <p class="helper-text">Record the time you truly focused on learning, even if it was shorter than planned.</p>
+          <div class="info-panel">
+            <strong>Planned study block:</strong>
+            <span id="planned-session-summary">0 min</span>
+          </div>
+          <label class="field-group">
             <span>Actual study minutes</span>
             <input id="actual-minutes" type="number" min="0" step="1" />
           </label>
           <div id="confirm-error" class="error hidden" aria-live="polite"></div>
-          <button id="save-session-btn" class="primary-btn" type="button">Save</button>
+          <div class="confirm-actions">
+            <button id="save-session-btn" class="primary-btn" type="button">Save session</button>
+          </div>
         </section>
 
         <section id="dashboard-view" class="view hidden">
           <div class="dashboard-top">
-            <div>
-              <p class="label">This week</p>
-              <h2 id="hours-reclaimed">0.0 hrs reclaimed</h2>
+            <div class="section-heading compact-heading">
+              <p class="eyebrow">Your progress</p>
+              <h2>This week</h2>
             </div>
           </div>
 
-          <div class="chart">
-            <div id="chart-bars" class="chart-bars"></div>
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <span class="kpi-label">Study minutes</span>
+              <strong id="week-minutes">0 min</strong>
+              <span class="kpi-meta">Current week</span>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">Hours</span>
+              <strong id="hours-reclaimed">0.0 hrs</strong>
+              <span class="kpi-meta">Recovered</span>
+            </article>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-heading">
+              <h3>Weekly breakdown</h3>
+            </div>
+            <div class="chart">
+              <div id="chart-bars" class="chart-bars"></div>
+            </div>
           </div>
 
           <div class="recent-sessions">
-            <h3>Recent sessions</h3>
+            <div class="chart-heading">
+              <h3>Recent sessions</h3>
+            </div>
             <ul id="recent-sessions-list"></ul>
           </div>
         </section>

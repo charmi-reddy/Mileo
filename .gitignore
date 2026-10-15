@@ -1,0 +1,6 @@
+/devpost/learner-profile.md
+/.venv/
+/.agents/
+/__pycache__/
+/data/
+*.pyc

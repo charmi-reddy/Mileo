@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commute Hours</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <h1>Commute Hours</h1>
+      </header>
+
+      <main>
+        <section id="setup-view" class="view active">
+          <p class="helper-text">For commuting time only. Resting is fine.</p>
+          <label>
+            <span>Route nickname</span>
+            <input id="route-name" type="text" maxlength="50" placeholder="Home to college" />
+          </label>
+
+          <label>
+            <span>One-way commute time (minutes)</span>
+            <input id="commute-minutes" type="number" min="0" step="1" placeholder="90" />
+          </label>
+
+          <div class="session-options">
+            <button class="session-btn" data-minutes="5">5 min</button>
+            <button class="session-btn" data-minutes="10">10 min</button>
+            <button class="session-btn" data-minutes="15">15 min</button>
+          </div>
+
+          <label>
+            <span>Session length (minutes)</span>
+            <input id="session-length" type="number" min="1" step="1" placeholder="Enter custom minutes" />
+          </label>
+
+          <button id="start-session-btn" class="primary-btn" type="button">Start study</button>
+          <div id="setup-error" class="error hidden" aria-live="polite"></div>
+        </section>
+
+        <section id="study-view" class="view hidden">
+          <div class="study-header">
+            <span id="study-progress">1 of 10</span>
+            <button id="end-session-btn" class="secondary-btn" type="button">End early</button>
+          </div>
+
+          <div class="card-panel">
+            <div id="question-text" class="question-text"></div>
+            <div id="answer-block" class="answer-block hidden">
+              <div id="answer-text" class="answer-text"></div>
+            </div>
+          </div>
+
+          <div class="study-actions">
+            <button id="show-answer-btn" class="primary-btn" type="button">Show answer</button>
+            <div id="response-actions" class="response-actions hidden">
+              <button id="understood-btn" class="success-btn" type="button">Understood</button>
+              <button id="review-btn" class="secondary-btn" type="button">Review again</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="confirm-view" class="view hidden">
+          <h2>How many minutes did you actually study?</h2>
+          <label>
+            <span>Actual study minutes</span>
+            <input id="actual-minutes" type="number" min="0" step="1" />
+          </label>
+          <div id="confirm-error" class="error hidden" aria-live="polite"></div>
+          <button id="save-session-btn" class="primary-btn" type="button">Save</button>
+        </section>
+
+        <section id="dashboard-view" class="view hidden">
+          <div class="dashboard-top">
+            <div>
+              <p class="label">This week</p>
+              <h2 id="hours-reclaimed">0.0 hrs reclaimed</h2>
+            </div>
+          </div>
+
+          <div class="chart">
+            <div id="chart-bars" class="chart-bars"></div>
+          </div>
+
+          <div class="recent-sessions">
+            <h3>Recent sessions</h3>
+            <ul id="recent-sessions-list"></ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>

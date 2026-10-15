@@ -8,6 +8,10 @@ const state = {
   answerVisible: false,
   saveLocked: false,
   currentSession: null,
+  reviewQueue: [],
+  sessionCards: [],
+  reviewPass: false,
+  understoodCount: 0,
 };
 
 const elements = {
@@ -22,9 +26,11 @@ const elements = {
   startSessionBtn: document.getElementById('start-session-btn'),
   setUpError: document.getElementById('setup-error'),
   studyProgress: document.getElementById('study-progress'),
+  studyStatus: document.getElementById('study-status'),
   questionText: document.getElementById('question-text'),
   answerBlock: document.getElementById('answer-block'),
   answerText: document.getElementById('answer-text'),
+  explanationText: document.getElementById('explanation-text'),
   showAnswerBtn: document.getElementById('show-answer-btn'),
   responseActions: document.getElementById('response-actions'),
   understoodBtn: document.getElementById('understood-btn'),
@@ -225,26 +231,42 @@ async function saveSettings() {
 }
 
 function renderCard() {
-  if (!state.deck.length) return;
-  const card = state.deck[state.currentIndex];
+  if (!state.sessionCards.length) return;
+  const card = state.sessionCards[state.currentIndex];
   if (!card) return;
 
   elements.questionText.textContent = card.question;
   elements.answerText.textContent = card.answer;
+  elements.explanationText.textContent = card.explanation || '';
   elements.answerBlock.classList.add('hidden');
   elements.responseActions.classList.add('hidden');
   elements.showAnswerBtn.classList.remove('hidden');
   elements.answerVisible = false;
 
-  const totalCards = state.deck.length;
-  elements.studyProgress.textContent = `${state.currentIndex + 1} of ${totalCards}`;
+  const totalCards = state.sessionCards.length;
+  const currentPosition = state.currentIndex + 1;
+  if (state.reviewPass) {
+    elements.studyProgress.textContent = `Review ${currentPosition} of ${totalCards}`;
+    elements.studyStatus.textContent = `Review queue: ${state.reviewQueue.length} • Understood: ${state.understoodCount}`;
+  } else {
+    elements.studyProgress.textContent = `Card ${currentPosition} of ${state.deck.length}`;
+    elements.studyStatus.textContent = `Initial pass • Understood: ${state.understoodCount} • Review: ${state.reviewQueue.length}`;
+  }
+}
+
+function resetSessionState() {
+  state.sessionCards = [...state.deck];
+  state.reviewQueue = [];
+  state.reviewPass = false;
+  state.currentIndex = 0;
+  state.understoodCount = 0;
 }
 
 function startSession() {
   if (!validateSetup()) return;
 
   state.sessionStarted = true;
-  state.currentIndex = 0;
+  resetSessionState();
   state.answerVisible = false;
   state.currentSession = {
     route_name: state.routeName,
@@ -256,14 +278,51 @@ function startSession() {
   saveSettings();
 }
 
-function nextCard() {
-  if (state.currentIndex >= state.deck.length - 1) {
+function finishOrReview() {
+  state.sessionCards.splice(state.currentIndex, 1);
+
+  if (state.sessionCards.length === 0) {
+    if (state.reviewQueue.length > 0 && !state.reviewPass) {
+      state.reviewPass = true;
+      state.sessionCards = [...state.reviewQueue];
+      state.reviewQueue = [];
+      state.currentIndex = 0;
+      renderCard();
+      return;
+    }
     openConfirmScreen();
     return;
   }
 
-  state.currentIndex += 1;
+  if (state.currentIndex >= state.sessionCards.length) {
+    state.currentIndex = 0;
+  }
+
   renderCard();
+}
+
+function markCurrentCard(reviewAgain) {
+  const card = state.sessionCards[state.currentIndex];
+  if (!card) {
+    openConfirmScreen();
+    return;
+  }
+
+  if (reviewAgain) {
+    const alreadyQueued = state.reviewQueue.some((item) => item.id === card.id);
+    if (!alreadyQueued) {
+      state.reviewQueue.push(card);
+    }
+    if (state.reviewPass && state.reviewQueue.length > 0 && state.sessionCards.length === 1) {
+      state.reviewQueue = [];
+      openConfirmScreen();
+      return;
+    }
+  } else {
+    state.understoodCount += 1;
+  }
+
+  finishOrReview();
 }
 
 function openConfirmScreen() {
@@ -356,18 +415,19 @@ function bindEvents() {
   });
 
   elements.showAnswerBtn.addEventListener('click', () => {
-    elements.answerBlock.classList.remove('hidden');
-    elements.responseActions.classList.remove('hidden');
-    elements.showAnswerBtn.classList.add('hidden');
-    elements.answerVisible = true;
+  elements.answerBlock.classList.remove('hidden');
+  elements.explanationText.classList.remove('hidden');
+  elements.responseActions.classList.remove('hidden');
+  elements.showAnswerBtn.classList.add('hidden');
+  elements.answerVisible = true;
   });
 
   elements.understoodBtn.addEventListener('click', () => {
-    nextCard();
+    markCurrentCard(false);
   });
 
   elements.reviewBtn.addEventListener('click', () => {
-    nextCard();
+    markCurrentCard(true);
   });
 
   elements.endSessionBtn.addEventListener('click', () => {

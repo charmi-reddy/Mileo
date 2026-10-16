@@ -3,140 +3,130 @@ doc: prd
 status: approved
 ---
 
-# Commute Hours — Product Requirements
+# Mileo — Product Requirements
 
-One line: a mobile-first app that turns daily commute time into a small, optional study break without pressure or unsafe use.
-Source: `scope.md > The Core Loop`, `scope.md > The Unique Kernel`, and `scope.md > What "Working" Looks Like`.
+One line: a mobile-first app that helps commuters turn part of their journey into a short, optional study block without pressure, guilt, or unsafe behavior.
 
 ## The Core Journey
-1. The user opens the app on their phone and sees a concise setup screen.
-2. They enter a route nickname such as "Home to college" and a one-way commute time in minutes.
-3. They choose a 5, 10, or 15 minute session that fits within their commute duration.
-4. The app opens a flashcard view showing one Python interview question at a time.
-5. The user taps "Show answer" to reveal the short answer and then taps either "Understood" or "Review again."
-6. The app advances to the next card and shows a progress indicator like "3 of 10."
-7. The user continues until all cards are finished or taps "End early."
-8. A confirmation screen asks, "How many minutes did you actually study?" with the planned time prefilled so they can adjust it.
-9. The user taps Save and sees a clear confirmation that the session was saved.
-10. The dashboard updates immediately to show this week's study minutes as "hours reclaimed" and a daily bar chart.
-11. If the user refreshes the page, the saved session and totals remain visible.
-12. If a save is mistaken, the user can fix it from the dashboard by deleting the session; edit is a stretch goal only.
+1. The user opens the app and lands on the setup screen.
+2. They enter a route nickname such as "Home to office" and a one-way commute time in minutes.
+3. They pick a study session length that fits within that commute, using a custom minute input rather than preset buttons.
+4. They choose a topic and difficulty, and optionally upload a PDF, DOCX, or TXT file to ground the generated deck.
+5. The app generates a 10-question deck and opens the study screen with the first card visible.
+6. The user taps "Reveal answer" and then chooses either "Understood" or "Review again."
+7. The app advances to the next card and continues until the deck is complete or the user ends early.
+8. The confirmation screen asks, "How many minutes did you actually study?" and pre-fills the planned session length for adjustment.
+9. The user taps Save and the app stores the real confirmed minutes in SQLite.
+10. The dashboard updates immediately to show the week’s study minutes, hours reclaimed, and recent-session list.
+11. If the user refreshes the page, the saved sessions and totals remain visible.
+12. If a session was saved incorrectly, the user can delete it from the recent session list; editing a saved session is not required for this proof of concept.
 
 ## Screens and Layout
 The app is designed for a narrow phone screen and follows a simple single-column flow:
-- Setup / session planner
+- Setup / commute planner
+- AI deck generation panel
 - Flashcard study screen
-- Save confirmation screen
-- Weekly dashboard with hours reclaimed and recent sessions
-- Bottom-sheet session actions for correcting a mistaken save
+- Study confirmation screen
+- Weekly dashboard with totals and recent sessions
 
-The layout is uncluttered, with big tap targets and concise text. The app does not require a complicated navigation model for this proof of concept.
+The layout is uncluttered, with big tap targets and concise labels. The app prioritizes clarity and speed over complicated navigation.
 
 ## Look and Feel
-The product should feel calm, minimal, trustworthy, and low-pressure. It should not feel gamified or socially competitive. The visual language is clean and modern, with large buttons, strong readability, and a quiet tone that reinforces that rest is valid and that the app is for passengers only, not for driving or walking.
+The app should feel calm, modern, and low-pressure. It should not feel gamified or socially competitive. The visual language is minimal and trustworthy, with strong contrast, roomy spacing, and large buttons on a mobile-first layout.
 
 ## Features and Behavior
 
 ### Setup and session planning
-- The user sees a setup screen with a route nickname field and a one-way commute duration in minutes.
-- The user can enter a route nickname such as "Home to college" or another label that makes sense for their daily trip.
-- The user picks a 5, 10, or 15 minute session option.
-- The setup screen includes a short line that makes the product's intent clear: it is for commuting time, and resting is fine.
-- The app requires the commute time to be at least the chosen session length; otherwise it shows a clear message and does not continue.
-- Planned time never counts as completed study; only actual confirmed study minutes count.
+- The user sees a setup screen with a route nickname field and one-way commute duration in minutes.
+- The user can manually enter a study session length that fits within that commute.
+- The app validates that commute minutes are at least the selected study length; otherwise a clear error appears and the user cannot continue.
+- The app is intentionally single-user and local-only.
+- Planned study time never counts as completed study; only actual confirmed minutes count.
+
+### AI microlearning flow
+- The user can generate a deck by choosing a topic and difficulty.
+- The user may optionally upload a PDF, DOCX, or TXT file to provide source material.
+- If no file is uploaded, the deck still generates from the topic + difficulty alone.
+- The backend generates exactly 10 questions, each with a question, an answer, and an explanation.
+- Generated decks are persisted in SQLite and can be reused from the saved deck list.
+- The app never exposes the Gemini API key in frontend code.
 
 ### Flashcard study flow
-- The user sees one Python interview-prep flashcard at a time.
-- The card includes a question and a short answer hidden until the user taps "Show answer."
-- After reading the answer, the user taps either "Understood" or "Review again."
-- The app advances to the next card and shows progress, such as "3 of 10."
-- The user can end the session early with "End early" instead of finishing the full deck.
-- The app treats each session as a real-use decision, not an open-ended study challenge.
+- The user studies one question at a time.
+- The answer is hidden until the user taps "Reveal answer."
+- The card can be marked either as understood or review again.
+- The progress indicator shows the actual card count across the full deck, such as "1 of 10", "2 of 10".
+- The user may end the session early.
 
 ### Save and confirmation
-- At the end of the session, the user lands on a confirmation screen asking: "How many minutes did you actually study?"
+- The app asks how many minutes were actually studied.
 - The planned session length is prefilled so the user can adjust it if needed.
-- The app accepts only a valid number of minutes, and the value must not exceed the selected session duration.
-- Zero minutes or invalid values produce a clear error message and are not saved.
-- On successful save, the app shows a clear success message, such as "Session saved."
-- The app stores only real, confirmed study minutes and never counts planned time.
+- Only valid positive values that do not exceed the planned plan are accepted.
+- The save button is disabled after the first tap to avoid duplicate saves.
+- On success, the app shows a message and keeps the weekly totals accurate.
 
 ### Dashboard and weekly summary
-- The dashboard shows this week's study minutes as "hours reclaimed," using actual study minutes divided by 60.
-- The dashboard also shows a simple daily bar chart for the current week.
-- Weekly totals use Monday-Sunday boundaries in the user's timezone, defaulting to Asia/Kolkata.
-- The dashboard remains correct after a page refresh.
+- The dashboard shows current-week study minutes and hours reclaimed.
+- Weekly totals use Monday-Sunday boundaries in the local timezone, defaulting to Asia/Kolkata.
+- The dashboard includes a recent sessions list with the last 10 entries.
+- The dashboard remains accurate after a page refresh.
 
 ### Recent sessions and correction flow
-- Under the weekly chart, the dashboard includes a "Recent sessions" list with the date and minutes for the last 10 saved sessions.
-- Tapping a recent session opens a bottom sheet designed for a narrow phone screen.
-- The bottom sheet offers one action:
-  - "Delete session"
-- Delete is the must-have recovery action for the proof of concept.
-- Delete flow:
-  - The user is asked to confirm: "Delete this session? Your weekly total will update."
-  - Confirming the delete removes the session immediately.
-  - The total and chart update immediately to reflect the deletion.
-- Edit minutes is explicitly a stretch goal and is not part of the required proof of concept.
-- No undo history, no bulk edits, and no account system are part of this proof of concept.
+- The recent sessions list contains the last 10 saved sessions.
+- The must-have correction flow is Delete.
+- Delete asks for confirmation and updates the totals immediately.
+- Edit is not required for the proof of concept.
 
 ## States and Boundaries
-- **First use** — The user sees a clean setup screen with empty fields and a brief supportive line about the app's purpose.
-- **Valid setup** — Route nickname and commute duration are entered, and the session buttons are available.
-- **Invalid setup** — Empty or malformed values trigger a clear validation message.
-- **Study session active** — One question is visible at a time and the answer is hidden until the user reveals it.
-- **Session complete or ended early** — The user reaches the confirmation step and records actual minutes.
-- **Invalid save** — Zero, empty, or over-limit minutes trigger an error message and do not save.
-- **Saved session** — Success is visible and totals update immediately.
-- **Dashboard after refresh** — Saved data remains visible and correct after reload.
-- **Deleted session** — The session disappears from the recent list and totals update immediately.
+- **First use** — setup screen is empty and ready for route and commute details.
+- **Valid setup** — route, commute time, and custom session length are accepted.
+- **Invalid setup** — empty route, invalid commute, or session greater than commute triggers a clear message.
+- **Deck generation** — topic/difficulty alone works, upload is optional.
+- **Study session active** — one card is visible at a time and answer is hidden until revealed.
+- **Session complete or ended early** — user proceeds to actual-minute confirmation.
+- **Invalid save** — zero or over-limit values are rejected.
+- **Saved session** — totals update immediately and persist in SQLite.
+- **Deleted session** — the session is removed and totals update immediately.
 
 ## Product Decisions
-- The product is intentionally single-user and local to the proof of concept.
-- Planned time is not treated as study time until actual minutes are confirmed.
-- Rest is a valid choice and is explicitly supported in the product messaging.
-- A commute duration must be at least the chosen session length, otherwise the user sees a clear message and cannot proceed.
-- The must-have recovery flow is delete, because it corrects the worst mistake: a wrongly saved session inflating the total.
-- Edit minutes is a stretch goal, not a required part of the prototype.
-- The app intentionally excludes GPS, maps, route optimization, fares, and live data to stay in the proof-of-concept boundary.
+- The product is intentionally single-user and local.
+- Planned minutes are never treated as completed study time.
+- A commute must be at least the selected session length.
+- The app should reinforce that rest is valid and that study should feel optional and calm.
+- The main correction path is delete, because it fixes the most damaging mistake: an inflated session total.
+- The AI deck is generated in the backend only; no API key is shipped to the browser.
 
 ## What We're Building
-The proof of concept must include:
-- Setup screen with route nickname, commute time, and session length choices
-- Single-card flashcard flow with reveal and review tracking
-- End-of-session actual-minute confirmation
-- Save validation and success state
-- Weekly dashboard with totals and daily chart
-- Recent sessions list and delete flow that updates totals immediately
-- Persistence across refresh
-- Clear empty, invalid, and zero-value states
+The proof of concept includes:
+- Setup with route name and commute time
+- Manual session-length input
+- AI deck generation from topic + difficulty, with optional document context
+- 10-question flashcard study flow
+- Save validation and duplicate-prevention behavior
+- Weekly dashboard and recent sessions
+- SQLite persistence and refresh safety
 
 ## Deferred From the POC
-- Account systems and login
-- Social features and leaderboards
-- GPS, maps, or route optimization
-- Transit fares or real route data
-- Live AI generation or dynamic deck creation
-- Audio, podcasts, or reminders
-- Multiple topics
-- Offline queued sync
-- Edit-minutes correction flow beyond the stretch goal
+- Login and account systems
+- Social features or leaderboards
+- GPS route tracking or transit trip optimization
+- Advanced analytics beyond weekly totals
+- Multiple user accounts or cross-device sync
 
 ## Possible Later Enhancements
-- Offline save queue and sync
-- Additional decks or optional audio content
-- More detailed analytics and richer weekly insights
-- Edit-minutes flow as a polished correction feature
-- More accessibility polish and empty-state improvements
+- More deck management tools and saved content history
+- Better AI prompts and richer document extraction
+- More detailed analytics and dashboard filters
+- Accessibility and UX refinement
 
 ## Non-Goals
-- Social comparison or public leaderboards
-- Real-time trip optimization or travel planning
+- Public comparison features
+- Real-time route optimization
 - Account-based data or social sharing
-- AI-generated personalized study decks in the first build
-- Multiple topics or dynamic content beyond the bundled Python deck
+- Mandatory document uploads for every deck
+- Complex multi-user infrastructure
 
 ## Open Questions
-- The exact wording of the validation messages can be chosen during the build as long as the behavior is clear and user-friendly.
-- The "Recent sessions" list is limited to the last 10 saved sessions and does not require filtering by week unless product needs expand later.
+- The exact wording of validation messages can be finalized during implementation, as long as they are clear and helpful.
+- The recent sessions list will stay capped at the last 10 entries unless the product expands later.
 

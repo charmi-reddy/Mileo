@@ -1,63 +1,68 @@
 ---
 doc: scope
-status: draft
+status: approved
 ---
 
-# Commute Hours
+# Mileo
 
-A mobile-first app that turns a commute into a small, optional learning break without adding pressure or unsafe screen use.
+A mobile-first commute learning app that helps a commuter turn part of their trip into a focused, optional microlearning session without pressure or unsafe use.
 
 ## The Unique Kernel
-The distinctive idea is a commute-aware micro-learning app that treats study as optional, bounded, and grounded in real travel time. The user chooses a session length that fits within their one-way commute, studies from a short Python interview-prep deck, and only counts confirmed study minutes after the session ends. It is not a productivity app, a to-do app, or a gamified learning platform—it is a respectful, small-learning tool built around a real daily pain point and a real daily decision.
+The distinctive idea is a commute-aware learning app that treats study as optional, bounded, and grounded in real travel time. The user enters a route and commute duration, sets a custom session length that fits within the trip, and then starts a study flow built around a quick AI-generated deck. The deck can be generated from a selected topic and difficulty, with an optional PDF, DOCX, or TXT upload for more grounded content. Only confirmed study minutes count toward the weekly total; planned time never does.
 
 ## Who It's For
-A student or software intern who commutes by public transport for around two hours each way and wants a low-pressure way to use part of that time for learning. The app is for passengers only; it is never used while driving, cycling, or crossing roads. The person wants a clean, low-friction experience that does not turn the commute into a demand or a guilt loop.
+This is for a student, learner, or working professional who commutes regularly and wants a low-pressure way to make that time productive. The app is intentionally designed for passengers only and is not built for driving, walking, or real-time travel planning. The user values a simple, calm experience that is easy to trust and easy to finish.
 
 ## The Core Loop
-The user opens the app, enters a route nickname and one-way commute duration, chooses a 5, 10, or 15 minute session that fits, and then studies a deck of Python interview-prep flashcards one by one. They reveal the answer, mark a card as understood or review again, and end the session early or complete it. At the end, they confirm actual study minutes and save the session. The dashboard then shows this week’s real study minutes as “hours reclaimed,” alongside a simple daily bar chart. Planned time never counts toward completed study.
+The user opens the app, enters a route nickname and one-way commute time in minutes, and chooses a study session length that fits inside that commute. They can optionally upload a document or simply choose a topic and difficulty to generate a 10-question deck. The app then presents one question at a time, reveals the answer on demand, and lets the user mark the card as understood or review again. After the session, the user confirms the actual minutes studied and saves the session. The dashboard then updates the current week’s totals and recent session list. Planned time never counts toward completed study.
 
 ## Inspiration & Identity
-This should feel calm, minimal, and trustworthy. The visual identity is a clean phone-first layout: large flashcard, clear actions, minimal friction, and a compact weekly summary. The mood is practical and uplifting, not gamified, not noisy, and not guilt-inducing. Rest is a valid choice; the app should reinforce that the commute is still a commute.
+The product should feel calm, minimal, and trustworthy. The visual language is clean, compact, and phone-first: large buttons, clear labels, strong contrast, and a quiet, reassuring tone. It is not a game, not a leaderboard, and not a guilt-driven productivity tool. Rest is a valid choice, and the app should reinforce that the commute is still a commute.
 
 ## Why This Matters to the Learner
-This matters because the learner experiences a real daily problem: a large amount of time is lost to commuting, and a small, optional study break feels like a meaningful improvement without becoming another obligation. The app is built around a real personal habit and a real personal tension: using commute time well without demanding too much from the self.
+The learner is trying to make daily travel time more useful without turning it into another source of pressure. The app reduces friction by turning commute minutes into a small, bounded microlearning block that can support repetition and recall without feeling like a big commitment.
 
 ## What "Working" Looks Like
-The proof of concept is a narrow-phone app where a user can enter route details, start a valid session length, complete a short flashcard flow, confirm actual minutes, and save a session. After refresh, the saved data still appears on the dashboard. The app handles zero-session and invalid-input states with clear messages. The weekly total is based on real confirmed study minutes and is shown as “hours reclaimed” with a daily bar chart. A fictional demo week is visibly labeled and separated from real totals.
+The proof of concept is a narrow-phone app where a user can set up a route and commute, generate a valid 10-question deck from either topic/difficulty or an uploaded document, study through the deck, confirm actual minutes, and save a session. After refresh, the saved data remains visible. The app handles zero-session, invalid-input, and over-limit states with clear validation. The dashboard shows this week’s study minutes and recent sessions in local time, defaulting to Asia/Kolkata.
 
 ## The POC Boundary
 In scope:
 - One local user, no login
-- Route nickname plus one-way commute duration in minutes
-- One bundled Python interview-prep deck with 10 flashcards
-- 5, 10, and 15 minute session lengths
+- Route nickname and one-way commute duration in minutes
+- Custom manual session length entry
+- Topic + difficulty AI deck generation
+- Optional PDF, DOCX, or TXT upload for additional source context
+- 10-question learning deck generation with answer/explanation output
 - Reveal-answer + understood/review-again flow
 - Actual study minutes confirmation and session save
-- Weekly summary as hours reclaimed and daily bar chart
-- Duplicate prevention, invalid input handling, zero-session states, edit/delete flows
-- Refresh persistence for settings and completed sessions
-- Demo week kept visibly separate from real data
+- Weekly summary as hours reclaimed and daily chart
+- Recent sessions list with delete flow
+- SQLite persistence for app settings, sessions, and AI-generated batches
+- Refresh persistence for settings and saved history
 - Mobile-first responsive layout
 
 Out of scope for the first proof:
 - Accounts and login
 - Social features and leaderboards
-- GPS, maps, route optimization, fares, or transit data
-- Live AI generation or audio content
-- Podcasts, audio downloads, reminders, or multiple decks/topics
-- Offline support until the core flow is validated
+- GPS, maps, travel routing, or fare data
+- Audio, podcasts, or reminders
+- Multiple users or real-time sync
+- Complex AI chat flows or long-form content generation
+- LocalStorage as the primary source of truth
 
 ## Later
-- Offline queued saves with IndexedDB and sync once the online flow works
-- Additional decks or optional audio content
-- More polished accessibility and empty states
-- Broader weekly analytics and richer visualization
-- Extra user preferences or route history
+- Better deck management and saved deck reuse
+- More advanced AI and prompt tuning
+- Additional study analytics and richer dashboards
+- Improved accessibility and visual polish
+- More document types and smarter content grounding
 
 ## Explicitly Cut
-- Accounts and social features: not needed for a solo personal tool and would expand the product beyond the single-user proof.
-- GPS/maps and route optimization: the app is intentionally not location-aware and does not depend on user travel data.
-- Transit fares and live routing: this is not a trip-planning app and would broaden the scope beyond the learning session goal.
-- Live AI generation: the deck is bundled and fixed for the proof of concept; dynamic generation is a later milestone.
-- Multiple topics and reminders: one topic and one focused flow are enough to prove the value of the concept.
-- Offline support before online validation: offline queueing is useful, but it should come after the core session flow is proven working.
+- Account-based features and shared histories
+- Public comparison or leaderboards
+- Travel optimization and route intelligence
+- AI as a mandatory requirement for every deck generation
+- Overly complex or multi-user infrastructure
+
+## Final product intent
+The current product is a local, single-user microlearning app that helps commuters turn part of their journey into a small, useful study habit using a lightweight AI deck without adding friction or pressure.

@@ -104,3 +104,62 @@ def test_rejects_invalid_timezone(client):
         json={"route_name": "Home", "commute_minutes": 45, "timezone": "Mars/Phobos"},
     )
     assert response.status_code == 400
+
+
+def test_generate_ai_questions_and_persist_batch(client, monkeypatch):
+    def fake_generate_question_batch(topic, difficulty, source_text):
+        assert topic == "Python"
+        assert difficulty == "Beginner"
+        assert source_text == "Python basics"
+        return [
+            {"question": f"Q{i}", "answer": f"A{i}", "explanation": f"E{i}"}
+            for i in range(1, 11)
+        ]
+
+    monkeypatch.setattr("app.generate_question_batch", fake_generate_question_batch)
+
+    response = client.post(
+        "/api/ai/generate",
+        data={"topic": "Python", "difficulty": "Beginner", "source_text": "Python basics"},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["count"] == 10
+    assert payload["batch_id"] > 0
+    assert len(payload["questions"]) == 10
+
+    saved = client.get("/api/ai/batches")
+    assert saved.status_code == 200
+    assert saved.get_json()["batches"][0]["topic"] == "Python"
+
+
+def test_ai_progress_can_resume_batch(client, monkeypatch):
+    def fake_generate_question_batch(topic, difficulty, source_text):
+        return [
+            {"question": f"Q{i}", "answer": f"A{i}", "explanation": f"E{i}"}
+            for i in range(1, 11)
+        ]
+
+    monkeypatch.setattr("app.generate_question_batch", fake_generate_question_batch)
+
+    response = client.post(
+        "/api/ai/generate",
+        data={"topic": "Data structures", "difficulty": "Intermediate", "source_text": "Lists, sets, dicts"},
+        content_type="multipart/form-data",
+    )
+    batch_id = response.get_json()["batch_id"]
+
+    progress_response = client.get(f"/api/ai/progress/{batch_id}")
+    assert progress_response.status_code == 200
+    assert progress_response.get_json()["current_index"] == 0
+
+    update = client.post(
+        f"/api/ai/progress/{batch_id}",
+        json={"current_index": 3, "understood_count": 2},
+    )
+    assert update.status_code == 200
+
+    resumed = client.get(f"/api/ai/progress/{batch_id}")
+    assert resumed.get_json()["current_index"] == 3
+    assert resumed.get_json()["understood_count"] == 2

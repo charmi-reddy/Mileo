@@ -45,6 +45,42 @@
             <input id="session-length" type="number" min="1" step="1" placeholder="Custom minutes" />
           </label>
 
+          <div class="ai-panel">
+            <div class="mini-panel-header">
+              <p class="eyebrow">AI microlearning</p>
+              <h3>Generate a 10-question deck</h3>
+            </div>
+
+            <div class="ai-form-grid">
+              <label class="field-group compact-field">
+                <span>Topic</span>
+                <input id="ai-topic" type="text" placeholder="Python basics" />
+              </label>
+
+              <label class="field-group compact-field">
+                <span>Difficulty</span>
+                <select id="ai-difficulty">
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </label>
+
+              <label class="field-group compact-field">
+                <span>Upload document</span>
+                <input id="ai-file" type="file" accept=".txt,.pdf,.docx" />
+              </label>
+
+              <button id="generate-ai-btn" class="secondary-btn full-width" type="button">Generate deck</button>
+              <div id="ai-status" class="ai-status hidden" aria-live="polite"></div>
+            </div>
+
+            <div class="saved-batches-box">
+              <h4>Saved decks</h4>
+              <ul id="ai-batch-list" class="ai-batch-list"></ul>
+            </div>
+          </div>
+
           <button id="start-session-btn" class="primary-btn" type="button">Start study</button>
           <div id="setup-error" class="error hidden" aria-live="polite"></div>
         </section>

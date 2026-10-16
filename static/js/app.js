@@ -22,6 +22,12 @@ const elements = {
   routeName: document.getElementById('route-name'),
   commuteMinutes: document.getElementById('commute-minutes'),
   sessionLength: document.getElementById('session-length'),
+  aiTopic: document.getElementById('ai-topic'),
+  aiDifficulty: document.getElementById('ai-difficulty'),
+  aiFile: document.getElementById('ai-file'),
+  generateAiBtn: document.getElementById('generate-ai-btn'),
+  aiStatus: document.getElementById('ai-status'),
+  aiBatchList: document.getElementById('ai-batch-list'),
   brandHomeLink: document.getElementById('brand-home-link'),
   startSessionBtn: document.getElementById('start-session-btn'),
   setUpError: document.getElementById('setup-error'),
@@ -413,6 +419,8 @@ function bindEvents() {
     }
   });
 
+  elements.generateAiBtn.addEventListener('click', generateAiDeck);
+
   [elements.routeName, elements.commuteMinutes, elements.sessionLength].forEach((field) => {
     field.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -447,10 +455,103 @@ function bindEvents() {
   elements.saveSessionBtn.addEventListener('click', saveSession);
 }
 
+async function loadAiBatches() {
+  const response = await fetch('/api/ai/batches');
+  if (!response.ok) return;
+  const data = await response.json();
+  const batches = data.batches || [];
+  elements.aiBatchList.innerHTML = '';
+
+  if (batches.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'ai-batch-item';
+    empty.innerHTML = '<div><strong>No saved decks yet</strong><small>Generate one to resume later.</small></div>';
+    elements.aiBatchList.appendChild(empty);
+    return;
+  }
+
+  batches.forEach((batch) => {
+    const item = document.createElement('li');
+    item.className = 'ai-batch-item';
+
+    const meta = document.createElement('div');
+    meta.innerHTML = `<strong>${batch.topic}</strong><small>${batch.difficulty} • ${batch.question_count} Qs</small>`;
+
+    const useBtn = document.createElement('button');
+    useBtn.type = 'button';
+    useBtn.className = 'secondary-btn';
+    useBtn.textContent = 'Use deck';
+    useBtn.addEventListener('click', () => {
+      state.deck = batch.questions || [];
+      if (!state.deck.length) {
+        showToast('This deck is empty.');
+        return;
+      }
+      showToast('Deck loaded');
+      showView(elements.setupView);
+    });
+
+    item.appendChild(meta);
+    item.appendChild(useBtn);
+    elements.aiBatchList.appendChild(item);
+  });
+}
+
+async function generateAiDeck() {
+  const topic = elements.aiTopic.value.trim();
+  const difficulty = elements.aiDifficulty.value;
+  const file = elements.aiFile.files[0];
+
+  if (!topic) {
+    setAiStatus('Add a topic before generating questions.', true);
+    return;
+  }
+
+  if (!file) {
+    setAiStatus('Upload a PDF, DOCX, or TXT file to generate the deck.', true);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('topic', topic);
+  formData.append('difficulty', difficulty);
+  if (file) {
+    formData.append('document', file);
+  }
+
+  elements.generateAiBtn.disabled = true;
+  setAiStatus('Generating your 10-question deck…', false);
+
+  try {
+    const response = await fetch('/api/ai/generate', { method: 'POST', body: formData });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Unable to generate deck.');
+    }
+    state.deck = data.questions || [];
+    setAiStatus(`Deck ready: ${data.count} questions generated.`, false);
+    showToast('AI deck generated');
+    elements.aiFile.value = '';
+    await loadAiBatches();
+  } catch (error) {
+    setAiStatus(error.message || 'Deck generation failed.', true);
+    showToast('Generation failed');
+  } finally {
+    elements.generateAiBtn.disabled = false;
+  }
+}
+
+function setAiStatus(message, isError) {
+  elements.aiStatus.textContent = message;
+  elements.aiStatus.classList.toggle('hidden', !message);
+  elements.aiStatus.style.color = isError ? 'var(--error)' : 'var(--primary-action)';
+}
+
 async function init() {
   await loadSettings();
   await loadDeck();
   await loadSummary();
+  await loadAiBatches();
   bindEvents();
   showView(elements.setupView);
   elements.setupView.classList.add('active');

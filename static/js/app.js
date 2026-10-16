@@ -1,6 +1,8 @@
 const state = {
   deck: [],
   currentIndex: 0,
+  cardsViewed: 0,
+  totalDeckCards: 0,
   selectedMinutes: null,
   routeName: '',
   commuteMinutes: 0,
@@ -250,25 +252,27 @@ function renderCard() {
   elements.showAnswerBtn.classList.remove('hidden');
   elements.answerVisible = false;
 
-  const totalCards = state.sessionCards.length;
-  const currentPosition = state.currentIndex + 1;
+  const totalCards = state.totalDeckCards || state.sessionCards.length || 1;
+  const currentPosition = Math.min(state.cardsViewed + 1, totalCards);
   const progressPercent = totalCards > 0 ? ((currentPosition / totalCards) * 100) : 0;
   elements.studyProgressBar.style.width = `${Math.min(progressPercent, 100)}%`;
 
   if (state.reviewPass) {
-    elements.studyProgress.textContent = `Review ${currentPosition} of ${totalCards}`;
+    elements.studyProgress.textContent = `Review ${Math.min(state.currentIndex + 1, state.sessionCards.length || 1)} of ${Math.max(state.sessionCards.length || 1, 1)}`;
     elements.studyStatus.textContent = `Review queue: ${state.reviewQueue.length} • Understood: ${state.understoodCount}`;
   } else {
-    elements.studyProgress.textContent = `Card ${currentPosition} of ${state.deck.length}`;
+    elements.studyProgress.textContent = `Card ${currentPosition} of ${totalCards}`;
     elements.studyStatus.textContent = `Initial pass • Understood: ${state.understoodCount} • Review: ${state.reviewQueue.length}`;
   }
 }
 
 function resetSessionState() {
   state.sessionCards = [...state.deck];
+  state.totalDeckCards = state.deck.length || 0;
   state.reviewQueue = [];
   state.reviewPass = false;
   state.currentIndex = 0;
+  state.cardsViewed = 0;
   state.understoodCount = 0;
 }
 
@@ -317,6 +321,8 @@ function markCurrentCard(reviewAgain) {
     openConfirmScreen();
     return;
   }
+
+  state.cardsViewed += 1;
 
   if (reviewAgain) {
     const alreadyQueued = state.reviewQueue.some((item) => item.id === card.id);
@@ -508,8 +514,7 @@ async function generateAiDeck() {
   }
 
   if (!file) {
-    setAiStatus('Upload a PDF, DOCX, or TXT file to generate the deck.', true);
-    return;
+    setAiStatus('Generating deck from topic and difficulty…', false);
   }
 
   const formData = new FormData();

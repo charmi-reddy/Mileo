@@ -11,9 +11,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
 BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
+
 DEFAULT_TIMEZONE = "Asia/Kolkata"
 MAX_ROUTE_NAME_LENGTH = 80
 MAX_COMMUTE_MINUTES = 24 * 60
@@ -73,13 +76,16 @@ def generate_question_batch(topic: str, difficulty: str, source_text: str) -> li
     safe_difficulty = (difficulty or "Beginner").strip() or "Beginner"
     safe_source = (source_text or "").strip()
     if not safe_source:
-        raise ValueError("Source text is required to generate questions.")
+        safe_source = (
+            f"Generate questions for topic '{safe_topic}' at difficulty level '{safe_difficulty}'. "
+            "Use the topic and difficulty to produce a useful learning deck without additional source text."
+        )
 
     prompt = (
         "You are generating a microlearning flashcard deck for a commuter app. "
         f"Create exactly {AI_BATCH_LIMIT} concise and useful questions about the topic: '{safe_topic}'. "
         f"Difficulty level: {safe_difficulty}. "
-        "Use the supplied source material to ground the questions. "
+        "Use the supplied source material when available; otherwise generate the deck from the topic and difficulty. "
         "Return only a valid JSON array with exactly 10 objects. Each object must have exactly three keys: "
         "question, answer, and explanation. Keep the wording clear and educational. "
         "Do not include markdown fences or extra commentary.\n\nSource:\n"
@@ -439,8 +445,9 @@ def create_app(test_db_path: str | Path | None = None) -> Flask:
 
         if not topic:
             return jsonify({"error": "Topic is required."}), 400
+
         if not source_text:
-            return jsonify({"error": "Add source text or upload a PDF, DOCX, or TXT file."}), 400
+            source_text = f"Topic: {topic}. Difficulty: {difficulty}."
 
         try:
             questions = generate_question_batch(topic, difficulty, source_text)

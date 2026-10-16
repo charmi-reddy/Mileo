@@ -3,4 +3,6 @@
 /.agents/
 /__pycache__/
 /data/
+.env
+.env.*
 *.pyc

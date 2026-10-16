@@ -134,6 +134,27 @@ def test_generate_ai_questions_and_persist_batch(client, monkeypatch):
     assert saved.get_json()["batches"][0]["topic"] == "Python"
 
 
+def test_generate_ai_questions_without_upload_or_source_text(client, monkeypatch):
+    def fake_generate_question_batch(topic, difficulty, source_text):
+        assert topic == "Algorithms"
+        assert difficulty == "Advanced"
+        assert "Algorithms" in source_text or "Advanced" in source_text
+        return [
+            {"question": f"Q{i}", "answer": f"A{i}", "explanation": f"E{i}"}
+            for i in range(1, 11)
+        ]
+
+    monkeypatch.setattr("app.generate_question_batch", fake_generate_question_batch)
+
+    response = client.post(
+        "/api/ai/generate",
+        data={"topic": "Algorithms", "difficulty": "Advanced"},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+    assert response.get_json()["count"] == 10
+
+
 def test_ai_progress_can_resume_batch(client, monkeypatch):
     def fake_generate_question_batch(topic, difficulty, source_text):
         return [

@@ -32,6 +32,7 @@ const elements = {
   aiBatchList: document.getElementById('ai-batch-list'),
   brandHomeLink: document.getElementById('brand-home-link'),
   startSessionBtn: document.getElementById('start-session-btn'),
+  viewProgressBtn: document.getElementById('view-progress-btn'),
   setUpError: document.getElementById('setup-error'),
   studyProgress: document.getElementById('study-progress'),
   studyProgressBar: document.getElementById('study-progress-bar'),
@@ -117,9 +118,14 @@ async function loadSummary() {
     bar.className = 'bar';
 
     const minutes = Number(day.minutes || 0);
-    const heightPercent = maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
+    const heightPercent = minutes > 0 && maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
     bar.style.height = `${heightPercent}%`;
+    bar.style.minHeight = minutes > 0 ? '8px' : '0px';
     bar.title = `${day.day}: ${minutes} minutes`;
+
+    if (minutes === 0) {
+      bar.classList.add('empty');
+    }
 
     const label = document.createElement('div');
     label.className = 'day-label';
@@ -426,6 +432,11 @@ function bindEvents() {
     if (validateSetup()) {
       startSession();
     }
+  });
+
+  elements.viewProgressBtn.addEventListener('click', async () => {
+    await loadSummary();
+    showView(elements.dashboardView);
   });
 
   elements.generateAiBtn.addEventListener('click', generateAiDeck);

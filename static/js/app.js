@@ -115,8 +115,11 @@ async function loadSummary() {
 
     const bar = document.createElement('div');
     bar.className = 'bar';
-    bar.style.height = `${Math.max((Number(day.minutes || 0) / maxMinutes) * 100, 8)}%`;
-    bar.title = `${day.day}: ${day.minutes} minutes`;
+
+    const minutes = Number(day.minutes || 0);
+    const heightPercent = maxMinutes > 0 ? (minutes / maxMinutes) * 100 : 0;
+    bar.style.height = `${heightPercent}%`;
+    bar.title = `${day.day}: ${minutes} minutes`;
 
     const label = document.createElement('div');
     label.className = 'day-label';

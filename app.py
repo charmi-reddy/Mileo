@@ -36,15 +36,45 @@ def default_settings() -> dict:
     return {"route_name": "", "commute_minutes": 0, "timezone": DEFAULT_TIMEZONE}
 
 
+def extract_json_array_text(raw_text: str) -> str:
+    text = raw_text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```\s*$", "", text)
+
+    start = text.find("[")
+    if start == -1:
+        raise ValueError("Gemini returned an unexpected format.")
+
+    depth = 0
+    in_string = False
+    escape_next = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escape_next:
+                escape_next = False
+            elif char == "\\":
+                escape_next = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+            continue
+        if char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+
+    raise ValueError("Gemini returned an incomplete JSON array.")
+
+
 def parse_question_objects(raw_text: str) -> list[dict]:
-    cleaned = raw_text.strip()
-    if cleaned.startswith("```"):
-        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
-        cleaned = re.sub(r"\s*```\s*$", "", cleaned)
-    start = cleaned.find("[")
-    end = cleaned.rfind("]")
-    if start != -1 and end != -1 and end > start:
-        cleaned = cleaned[start : end + 1]
+    cleaned = extract_json_array_text(raw_text)
     payload = json.loads(cleaned)
     if not isinstance(payload, list):
         raise ValueError("Gemini returned an unexpected format.")
@@ -97,6 +127,19 @@ def generate_question_batch(topic: str, difficulty: str, source_text: str) -> li
         "generationConfig": {
             "temperature": 0.3,
             "maxOutputTokens": 4000,
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "question": {"type": "STRING"},
+                        "answer": {"type": "STRING"},
+                        "explanation": {"type": "STRING"},
+                    },
+                    "required": ["question", "answer", "explanation"],
+                },
+            },
         },
     }
 
@@ -109,9 +152,16 @@ def generate_question_batch(topic: str, difficulty: str, source_text: str) -> li
     with urllib.request.urlopen(request, timeout=60) as response:
         data = json.loads(response.read().decode("utf-8"))
 
-    candidate = data["candidates"][0]
-    text_blocks = candidate["content"]["parts"]
-    raw_text = "".join(part.get("text", "") for part in text_blocks)
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise ValueError("Gemini returned no generated content.")
+
+    candidate = candidates[0]
+    content = candidate.get("content") or {}
+    text_blocks = content.get("parts") or []
+    raw_text = "".join(part.get("text", "") for part in text_blocks if isinstance(part, dict))
+    if not raw_text.strip():
+        raise ValueError("Gemini returned an empty deck.")
     return parse_question_objects(raw_text)
 
 
@@ -451,8 +501,12 @@ def create_app(test_db_path: str | Path | None = None) -> Flask:
 
         try:
             questions = generate_question_batch(topic, difficulty, source_text)
-        except (RuntimeError, ValueError, json.JSONDecodeError, urllib.error.URLError) as exc:
-            return jsonify({"error": str(exc)}), 503 if "Gemini" in str(exc) or "API key" in str(exc) else 400
+        except json.JSONDecodeError:
+            return jsonify({"error": "The AI response was not valid JSON. Please try again."}), 502
+        except (RuntimeError, ValueError, urllib.error.URLError) as exc:
+            message = str(exc)
+            status_code = 503 if ("Gemini" in message or "API key" in message) else 400
+            return jsonify({"error": message}), status_code
 
         now = datetime.now(timezone.utc).isoformat()
         db_path = Path(app.config["DATABASE_PATH"])

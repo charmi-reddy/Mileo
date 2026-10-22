@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from app import create_app
+from app import create_app, parse_question_objects
 
 
 @pytest.fixture
@@ -184,3 +184,22 @@ def test_ai_progress_can_resume_batch(client, monkeypatch):
     resumed = client.get(f"/api/ai/progress/{batch_id}")
     assert resumed.get_json()["current_index"] == 3
     assert resumed.get_json()["understood_count"] == 2
+
+
+def test_parse_question_objects_recovers_fenced_json_with_prose():
+    questions = [
+        {"question": f"Q{i}", "answer": f"A{i}", "explanation": f"E{i}"}
+        for i in range(1, 11)
+    ]
+    raw_text = """Here is the deck you asked for:
+```json
+{payload}
+```
+Hope that helps.
+""".format(payload=json.dumps(questions))
+
+    parsed = parse_question_objects(raw_text)
+
+    assert len(parsed) == 10
+    assert parsed[0]["question"] == "Q1"
+    assert parsed[-1]["explanation"] == "E10"

@@ -21,6 +21,8 @@ python app.py
 
 Then open http://localhost:5000 in a browser.
 
+## Youtube link: https://youtu.be/08oXhUi9bRc
+
 ## Notes
 - Intended for a single local user, no login.
 - Commute time must be at least the selected session length.
